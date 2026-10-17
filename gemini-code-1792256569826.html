@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Kniffel Scorecard & Stats</title>
+
+  <!-- iOS Home-Bildschirm Vollbild (Keine Safari-UI) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kniffel">
+  <meta name="theme-color" content="#f2f2f7">
+
+  <style>
+    :root {
+      --bg-color: #f2f2f7;
+      --card-bg: #ffffff;
+      --accent-color: #ff9500; /* Apple Orange */
+      --text-color: #000000;
+      --text-secondary: #8e8e93;
+      --border-color: #e5e5ea;
+      --badge-bg: #e5e5ea;
+      --danger-color: #ff3b30;
+      --success-color: #34c759;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #000000;
+        --card-bg: #1c1c1e;
+        --text-color: #ffffff;
+        --text-secondary: #8e8e93;
+        --border-color: #2c2c2e;
+        --badge-bg: #2c2c2e;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    header {
+      padding: 16px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      background-color: var(--bg-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      padding-bottom: 80px;
+    }
+
+    /* Tab Bar im iOS / Reminders Design */
+    nav {
+      display: flex;
+      background-color: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 100;
+      transition: transform 0.25s ease-in-out;
+    }
+
+    nav.hidden {
+      transform: translateY(100%);
+    }
+
+    .tab-btn {
+      flex: 1;
+      border: none;
+      background: none;
+      color: var(--text-secondary);
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      gap: 4px;
+    }
+
+    .tab-btn svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    .tab-btn.active {
+      color: var(--accent-color);
+      font-weight: 600;
+    }
+
+    /* Card Layouts */
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .badge {
+      background-color: var(--badge-bg);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .badge.striked {
+      color: var(--danger-color);
+    }
+
+    .badge.active {
+      color: var(--accent-color);
+    }
+
+    .btn {
+      width: 100%;
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--text-secondary);
+    }
+
+    /* Status Pill für Cloud Sync */
+    .sync-status {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--danger-color);
+      margin-right: 6px;
+    }
+
+    .sync-status.connected {
+      background-color: var(--success-color);
+    }
+
+    /* Modal / Bottom Sheets */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: flex-end;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      width: 100%;
+      border-radius: 16px 16px 0 0;
+      padding: 24px;
+      transform: translateY(100%);
+      transition: transform 0.25s ease;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    }
+
+    .modal-overlay.active .modal {
+      transform: translateY(0);
+    }
+
+    .grid-6 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .grid-btn {
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--text-color);
+      cursor: pointer;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-container">
+    <header id="header-title">Neues Spiel</header>
+
+    <main id="main-content">
+      <!-- Dynamischer Inhalt -->
+    </main>
+
+    <nav id="navbar">
+      <button class="tab-btn active" onclick="switchTab('newGame')">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Spielen
+      </button>
+      <button class="tab-btn" onclick="switchTab('leaderboard')">
+        <svg viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V18H8v2h8v-2h-3v-2.1c2.12-.39 3.79-2.03 3.98-4.22C19.38 11.31 21 9.35 21 7V6c0-1.1-.9-1-2-1zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
+        Leaderboard
+      </button>
+      <button class="tab-btn" onclick="switchTab('history')">
+        <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8z"/></svg>
+        Verlauf
+      </button>
+      <button class="tab-btn" onclick="switchTab('players')">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        Spieler
+      </button>
+    </nav>
+  </div>
+
+  <!-- Modal / Picker Sheet -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+    <div class="modal" id="modal-body"></div>
+  </div>
+
+  <script>
+    // App State Management
+    let state = {
+      players: [],
+      sessions: [],
+      activeGame: null,
+      currentTab: 'newGame',
+      leaderboardSort: 'avg',
+      apiUrl: localStorage.getItem('kniffel_api_url') || '',
+      apiPassword: localStorage.getItem('kniffel_api_password') || ''
+    };
+
+    function loadState() {
+      const data = localStorage.getItem('kniffel_pwa_data');
+      if (data) {
+        const parsed = JSON.parse(data);
+        state.players = parsed.players || [];
+        state.sessions = parsed.sessions || [];
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem('kniffel_pwa_data', JSON.stringify({
+        players: state.players,
+        sessions: state.sessions
+      }));
+    }
+
+    // App Initialization
+    document.addEventListener('DOMContentLoaded', async () => {
+      loadState();
+      if (state.apiUrl) {
+        await syncWithGoogleSheets(true);
+      }
+      switchTab('newGame');
+    });
+
+    function switchTab(tab) {
+      state.currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', ['newGame', 'leaderboard', 'history', 'players'][idx] === tab);
+      });
+
+      const header = document.getElementById('header-title');
+      const nav = document.getElementById('navbar');
+
+      if (state.activeGame) {
+        nav.classList.add('hidden');
+        header.textContent = "Laufende Partie";
+      } else {
+        nav.classList.remove('hidden');
+        const titles = { newGame: 'Neues Spiel', leaderboard: 'Leaderboard', history: 'Verlauf', players: 'Spieler & Cloud' };
+        header.textContent = titles[tab];
+      }
+
+      render();
+    }
+
+    // Dynamic Rendering
+    function render() {
+      const content = document.getElementById('main-content');
+
+      if (state.activeGame) {
+        renderScorecard(content);
+        return;
+      }
+
+      switch (state.currentTab) {
+        case 'newGame': renderNewGameSetup(content); break;
+        case 'leaderboard': renderLeaderboard(content); break;
+        case 'history': renderHistory(content); break;
+        case 'players': renderPlayerManagement(content); break;
+      }
+    }
+
+    // 1. NEW GAME SETUP & SCORECARD
+    function renderNewGameSetup(container) {
+      container.innerHTML = `
+        <div class="card">
+          <div class="section-title">Spieler auswählen</div>
+          <select id="player-select">
+            <option value="">Bitte wählen...</option>
+            ${state.players.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+          </select>
+          <button class="btn" onclick="startGame()">Partie Starten</button>
+        </div>
+      `;
+    }
+
+    function startGame() {
+      const select = document.getElementById('player-select');
+      const playerId = select.value;
+      if (!playerId) return alert("Bitte einen Spieler auswählen!");
+
+      state.activeGame = {
+        playerId: playerId,
+        scores: { ones: null, twos: null, threes: null, fours: null, fives: null, sixes: null,
+                  threeOfAKind: null, fourOfAKind: null, fullHouse: null, smallStraight: null,
+                  largeStraight: null, kniffel: null, kniffelVal: null, chance: null }
+      };
+
+      switchTab('newGame');
+    }
+
+    function renderScorecard(container) {
+      const player = state.players.find(p => p.id === state.activeGame.playerId);
+      const scores = state.activeGame.scores;
+
+      const upperSum = ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes']
+        .reduce((sum, key) => sum + (scores[key] || 0), 0);
+      const bonus = upperSum >= 63 ? 35 : 0;
+      const lowerSum = ['threeOfAKind', 'fourOfAKind', 'fullHouse', 'smallStraight', 'largeStraight', 'kniffel', 'chance']
+        .reduce((sum, key) => sum + (scores[key] || 0), 0);
+      const total = upperSum + bonus + lowerSum;
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="section-title">Spieler: ${player ? player.name : ''}</div>
+          <div class="row"><strong>Gesamtpunkte</strong> <span class="badge active" style="font-size: 18px;">${total}</span></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Oberer Teil</div>
+          ${renderRow('Einser', 'ones', scores.ones)}
+          ${renderRow('Zweier', 'twos', scores.twos)}
+          ${renderRow('Dreier', 'threes', scores.threes)}
+          ${renderRow('Vierer', 'fours', scores.fours)}
+          ${renderRow('Fünfer', 'fives', scores.fives)}
+          ${renderRow('Sechser', 'sixes', scores.sixes)}
+          <div class="row"><span>Bonus (63+)</span> <strong>${bonus > 0 ? '+35' : '0'}</strong></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Unterer Teil</div>
+          ${renderRow('Dreierpasch', 'threeOfAKind', scores.threeOfAKind, true)}
+          ${renderRow('Viererpasch', 'fourOfAKind', scores.fourOfAKind, true)}
+          ${renderFixedRow('Full House (25)', 'fullHouse', scores.fullHouse, 25)}
+          ${renderFixedRow('Kleine Straße (30)', 'smallStraight', scores.smallStraight, 30)}
+          ${renderFixedRow('Große Straße (40)', 'largeStraight', scores.largeStraight, 40)}
+          <div class="row" onclick="handleKniffelTap()">
+            <span>Kniffel (50) ${scores.kniffelVal ? `<small>(${scores.kniffelVal}er)</small>` : ''}</span>
+            <span class="badge ${scores.kniffel === 0 ? 'striked' : 'active'}">${scores.kniffel ?? '–'}</span>
+          </div>
+          ${renderRow('Chance', 'chance', scores.chance, true)}
+        </div>
+
+        <button class="btn" onclick="finishGame(${total})">Spiel Beenden & Speichern</button>
+      `;
+    }
+
+    function renderRow(label, key, val, isNumpad = false) {
+      return `
+        <div class="row" onclick="openPicker('${key}', ${isNumpad})">
+          <span>${label}</span>
+          <span class="badge ${val === 0 ? 'striked' : ''}">${val ?? '–'}</span>
+        </div>`;
+    }
+
+    function renderFixedRow(label, key, val, targetVal) {
+      return `
+        <div class="row" onclick="toggleFixed('${key}', ${targetVal})">
+          <span>${label}</span>
+          <span class="badge ${val === 0 ? 'striked' : ''}">${val ?? '–'}</span>
+        </div>`;
+    }
+
+    function toggleFixed(key, targetVal) {
+      const current = state.activeGame.scores[key];
+      if (current === null) state.activeGame.scores[key] = targetVal;
+      else if (current === targetVal) state.activeGame.scores[key] = 0;
+      else state.activeGame.scores[key] = null;
+      render();
+    }
+
+    function handleKniffelTap() {
+      const current = state.activeGame.scores.kniffel;
+      if (current === null) {
+        showModal(`
+          <h3>Welche Augenzahl?</h3>
+          <div class="grid-6">
+            ${[1,2,3,4,5,6].map(n => `<button class="grid-btn" onclick="setKniffel(${n})">${n}er</button>`).join('')}
+          </div>
+        `);
+      } else if (current === 50) {
+        state.activeGame.scores.kniffel = 0;
+        state.activeGame.scores.kniffelVal = null;
+        render();
+      } else {
+        state.activeGame.scores.kniffel = null;
+        state.activeGame.scores.kniffelVal = null;
+        render();
+      }
+    }
+
+    function setKniffel(num) {
+      state.activeGame.scores.kniffel = 50;
+      state.activeGame.scores.kniffelVal = num;
+      closeModal();
+      render();
+    }
+
+    function openPicker(key, isNumpad) {
+      if (isNumpad) {
+        showModal(`
+          <h3>Punkte eingeben</h3>
+          <input type="number" id="numpad-input" placeholder="0" autofocus style="margin-top: 12px;">
+          <button class="btn" onclick="saveNumpad('${key}')">Speichern</button>
+          <button class="btn btn-secondary" onclick="saveValue('${key}', 0)">Streichen (0)</button>
+        `);
+      } else {
+        const mults = { ones: 1, twos: 2, threes: 3, fours: 4, fives: 5, sixes: 6 };
+        const m = mults[key];
+        showModal(`
+          <h3>Punkte wählen</h3>
+          <div class="grid-6">
+            ${[1,2,3,4,5].map(c => `<button class="grid-btn" onclick="saveValue('${key}',${c * m})">${c}x (${c * m})</button>`).join('')}
+          </div>
+          <button class="btn btn-secondary" onclick="saveValue('${key}', 0)">Streichen (0)</button>
+        `);
+      }
+    }
+
+    function saveValue(key, val) {
+      state.activeGame.scores[key] = val;
+      closeModal();
+      render();
+    }
+
+    function saveNumpad(key) {
+      const val = parseInt(document.getElementById('numpad-input').value) || 0;
+      saveValue(key, val);
+    }
+
+    async function finishGame(total) {
+      const session = {
+        date: new Date().toLocaleDateString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+        playerId: state.activeGame.playerId,
+        total: total,
+        kniffelVal: state.activeGame.scores.kniffelVal
+      };
+
+      state.sessions.push(session);
+      state.activeGame = null;
+      saveState();
+
+      // In Cloud sichern
+      if (state.apiUrl) {
+        await sendToGoogleSheets({ action: "saveGame", session: session });
+      }
+
+      switchTab('history');
+    }
+
+    // 2. LEADERBOARD
+    function renderLeaderboard(container) {
+      let sorted = [...state.players].map(p => {
+        let pSessions = state.sessions.filter(s => s.playerId === p.id);
+        let avg = pSessions.length ? (pSessions.reduce((a,b) => a + Number(b.total), 0) / pSessions.length) : 0;
+        let high = pSessions.length ? Math.max(...pSessions.map(s => Number(s.total))) : 0;
+        return { ...p, avg: avg.toFixed(1), high: high, games: pSessions.length };
+      });
+
+      if (state.leaderboardSort === 'avg') sorted.sort((a,b) => b.avg - a.avg);
+      if (state.leaderboardSort === 'high') sorted.sort((a,b) => b.high - a.high);
+      if (state.leaderboardSort === 'games') sorted.sort((a,b) => b.games - a.games);
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="section-title">Sortierung</div>
+          <select onchange="state.leaderboardSort = this.value; render();">
+            <option value="avg" ${state.leaderboardSort==='avg'?'selected':''}>Durchschnittspunkte (Ø)</option>
+            <option value="high" ${state.leaderboardSort==='high'?'selected':''}>Highscore</option>
+            <option value="games" ${state.leaderboardSort==='games'?'selected':''}>Gesamtspiele</option>
+          </select>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Rangliste</div>
+          ${sorted.map((p, i) => `
+            <div class="row">
+              <span><strong>#${i+1}</strong> ${p.name} (${p.games} Spiele)</span>
+              <span class="badge active">${state.leaderboardSort === 'high' ? p.high + ' Pkt' : p.avg + ' Ø'}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // 3. HISTORY
+    function renderHistory(container) {
+      container.innerHTML = `
+        <div class="card">
+          <div class="section-title">Gespielte Partien</div>
+          ${state.sessions.slice().reverse().map(s => {
+            const player = state.players.find(p => p.id === s.playerId);
+            return `
+              <div class="row">
+                <div>
+                  <strong>${player ? player.name : 'Unbekannt'}</strong><br>
+                  <small style="color:var(--text-secondary);">${s.date}</small>
+                </div>
+                <span class="badge active">${s.total} Pkt</span>
+              </div>`;
+          }).join('') || '<p style="color:var(--text-secondary);">Noch keine Spiele aufgezeichnet.</p>'}
+        </div>
+      `;
+    }
+
+    // 4. PLAYERS & CLOUD SETTINGS
+    function renderPlayerManagement(container) {
+      const isConnected = Boolean(state.apiUrl && state.apiPassword);
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="section-title">
+            <span class="sync-status ${isConnected ? 'connected' : ''}"></span>
+            Google Sheets Synchronisation
+          </div>
+          <input type="text" id="api-url" placeholder="Web-App URL (https://script.google.com/.../exec)" value="${state.apiUrl}">
+          <input type="password" id="api-password" placeholder="Passwort" value="${state.apiPassword}" style="margin-top: 8px;">
+          <button class="btn" onclick="saveCloudCredentials()">Verbinden & Synchronisieren</button>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Neuer Spieler</div>
+          <input type="text" id="new-player-name" placeholder="Spielername">
+          <button class="btn" onclick="addPlayer()">Hinzufügen</button>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Vorhandene Spieler</div>
+          ${state.players.map(p => `
+            <div class="row">
+              <span>${p.name}</span>
+              <button style="background:none; border:none; color:var(--danger-color); font-weight:bold;" onclick="deletePlayer('${p.id}')">Löschen</button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    async function addPlayer() {
+      const input = document.getElementById('new-player-name');
+      const name = input.value.trim();
+      if (!name) return;
+
+      const player = { id: Date.now().toString(), name: name };
+      state.players.push(player);
+      saveState();
+
+      if (state.apiUrl) {
+        await sendToGoogleSheets({ action: "addPlayer", player: player });
+      }
+
+      render();
+    }
+
+    function deletePlayer(id) {
+      if (!confirm("Spieler und zugehörige Daten wirklich löschen?")) return;
+      state.players = state.players.filter(p => p.id !== id);
+      saveState();
+      render();
+    }
+
+    // GOOGLE SHEETS API LOGIC
+    function saveCloudCredentials() {
+      const url = document.getElementById('api-url').value.trim();
+      const pwd = document.getElementById('api-password').value.trim();
+
+      state.apiUrl = url;
+      state.apiPassword = pwd;
+
+      localStorage.setItem('kniffel_api_url', url);
+      localStorage.setItem('kniffel_api_password', pwd);
+
+      syncWithGoogleSheets(false);
+    }
+
+    async function sendToGoogleSheets(payload) {
+      if (!state.apiUrl || !state.apiPassword) return;
+      payload.password = state.apiPassword;
+
+      try {
+        const response = await fetch(state.apiUrl, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (result.status === "error") {
+          alert("Cloud-Fehler: " + result.message);
+        }
+        return result;
+      } catch (err) {
+        console.error("Netzwerkfehler:", err);
+      }
+    }
+
+    async function syncWithGoogleSheets(silent = false) {
+      if (!state.apiUrl) return;
+
+      const result = await sendToGoogleSheets({ action: "syncAll" });
+      if (result && result.status === "success") {
+        state.players = result.players || [];
+        state.sessions = result.sessions || [];
+        saveState();
+        render();
+        if (!silent) alert("Erfolgreich mit Google Sheets synchronisiert!");
+      }
+    }
+
+    // UI MODAL HELPERS
+    function showModal(html) {
+      document.getElementById('modal-body').innerHTML = html;
+      document.getElementById('modal-overlay').classList.add('active');
+    }
+
+    function closeModal(e) {
+      if (!e || e.target.id === 'modal-overlay') {
+        document.getElementById('modal-overlay').classList.remove('active');
+      }
+    }
+
+    // SERVICE WORKER (OFFLINE CAPACITY)
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        self.addEventListener('install', e => e.waitUntil(caches.open('kniffel-v2').then(c => c.addAll(['./']))));
+        self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
+      `;
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+    }
+  </script>
+</body>
+</html>
