@@ -868,25 +868,25 @@
     }
 
     function renderPlayerList(container) {
-      container.innerHTML = `
-        <div class="card">
-          <div class="section-title">Alle Spieler (${state.players.length})</div>
-          <button class="btn" onclick="openAddPlayerModal()" style="margin-bottom:16px;">＋ Neuen Spieler anlegen</button>
-          ${state.players.length === 0 ? '<p style="color:var(--text-secondary);">Noch keine Spieler vorhanden.</p>' : ''}
-          ${state.players.map(p => `
-            <div class="row" onclick="openPlayerDetail('${p.id}')">
-              <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:36px; height:36px; border-radius:50%; background:var(--accent-color); color:white; font-weight:bold; display:flex; align-items:center; justify-content:center;">
-                  ${escapeHtml(p.name.charAt(0).toUpperCase())}
-                </div>
-                <span><strong>${escapeHtml(p.name)}</strong></span>
-              </div>
-              <button style="background:none; border:none; color:var(--danger-color); font-weight:bold;" onclick="event.stopPropagation(); deletePlayer('${p.id}')">Löschen</button>
+  container.innerHTML = `
+    <div class="card">
+      <div class="section-title">Alle Spieler (${state.players.length})</div>
+      <button class="btn" onclick="openAddPlayerModal()" style="margin-bottom:16px;">＋ Neuen Spieler anlegen</button>
+      ${state.players.length === 0 ? '<p style="color:var(--text-secondary);">Noch keine Spieler vorhanden.</p>' : ''}
+      ${state.players.map(p => `
+        <div class="row" style="cursor:pointer;" onclick="openPlayerDetail('${p.id}')">
+          <div style="display:flex; align-items:center; gap:12px; pointer-events:none;">
+            <div style="width:36px; height:36px; border-radius:50%; background:var(--accent-color); color:white; font-weight:bold; display:flex; align-items:center; justify-content:center;">
+              ${escapeHtml(p.name.charAt(0).toUpperCase())}
             </div>
-          `).join('')}
+            <span><strong>${escapeHtml(p.name)}</strong></span>
+          </div>
+          <button style="background:none; border:none; color:var(--danger-color); font-weight:bold; padding:8px;" onclick="event.stopPropagation(); deletePlayer('${p.id}')">Löschen</button>
         </div>
-      `;
-    }
+      `).join('')}
+    </div>
+  `;
+}
 
     function openAddPlayerModal() {
       showModal(`
