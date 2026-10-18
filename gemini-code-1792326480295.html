@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Kniffel Scorecard & Stats</title>
+
+  <!-- iOS Home-Bildschirm Vollbild (Keine Safari-UI) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kniffel">
+  <meta name="theme-color" content="#f2f2f7">
+
+  <!-- APP ICON FÜR DEN HOMESCREEN -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23ffb340;stop-opacity:1'/><stop offset='100%' style='stop-color:%23ff9500;stop-opacity:1'/></linearGradient></defs><rect width='512' height='512' rx='115' fill='url(%23grad)'/><rect x='112' y='112' width='288' height='288' rx='48' fill='%23ffffff' opacity='0.2'/><circle cx='180' cy='180' r='28' fill='%23ffffff'/><circle cx='332' cy='180' r='28' fill='%23ffffff'/><circle cx='256' cy='256' r='28' fill='%23ffffff'/><circle cx='180' cy='332' r='28' fill='%23ffffff'/><circle cx='332' cy='332' r='28' fill='%23ffffff'/></svg>">
+
+  <style>
+    :root {
+      --bg-color: #f2f2f7;
+      --card-bg: #ffffff;
+      --accent-color: #ff9500;
+      --text-color: #000000;
+      --text-secondary: #8e8e93;
+      --border-color: #e5e5ea;
+      --badge-bg: #e5e5ea;
+      --danger-color: #ff3b30;
+      --success-color: #34c759;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #000000;
+        --card-bg: #1c1c1e;
+        --text-color: #ffffff;
+        --text-secondary: #8e8e93;
+        --border-color: #2c2c2e;
+        --badge-bg: #2c2c2e;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    header {
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 19px;
+      font-weight: 700;
+      background-color: var(--bg-color);
+      border-bottom: 1px solid var(--border-color);
+      min-height: 52px;
+    }
+
+    header .header-title {
+      flex: 1;
+      text-align: center;
+    }
+
+    header .add-btn {
+      background: none;
+      border: none;
+      color: var(--accent-color);
+      font-size: 26px;
+      font-weight: 400;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      padding-bottom: 85px;
+    }
+
+    nav {
+      display: flex;
+      background-color: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 68px;
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 100;
+      transition: transform 0.25s ease-in-out;
+    }
+
+    nav.hidden {
+      transform: translateY(100%);
+    }
+
+    .tab-btn {
+      flex: 1;
+      border: none;
+      background: none;
+      color: var(--text-secondary);
+      font-size: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      gap: 3px;
+    }
+
+    .tab-btn svg {
+      width: 26px;
+      height: 26px;
+      fill: currentColor;
+    }
+
+    .tab-btn.active {
+      color: var(--accent-color);
+      font-weight: 600;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .badge {
+      background-color: var(--badge-bg);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .badge.striked { color: var(--danger-color); }
+    .badge.active { color: var(--accent-color); }
+
+    .btn {
+      width: 100%;
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--text-secondary);
+    }
+
+    .scorecard-matrix-wrapper {
+      display: flex;
+      background: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      margin-bottom: 16px;
+    }
+
+    .sticky-labels-col {
+      width: 130px;
+      flex-shrink: 0;
+      background: var(--card-bg);
+      border-right: 2px solid var(--border-color);
+      z-index: 10;
+    }
+
+    .sticky-cell {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sticky-cell.header-cell {
+      height: 52px;
+      background: var(--bg-color);
+      color: var(--text-secondary);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .scrollable-players-col {
+      display: flex;
+      overflow-x: auto;
+      flex-grow: 1;
+      scroll-snap-type: x mandatory;
+    }
+
+    .player-col {
+      min-width: calc(50% - 1px);
+      flex: 0 0 calc(50% - 1px);
+      border-right: 1px solid var(--border-color);
+      scroll-snap-align: start;
+    }
+
+    .player-cell {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+    }
+
+    .player-cell.header-cell {
+      height: 52px;
+      background: var(--bg-color);
+      font-weight: bold;
+      font-size: 14px;
+      color: var(--accent-color);
+      flex-direction: column;
+      padding: 4px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: flex-end;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      width: 100%;
+      border-radius: 16px 16px 0 0;
+      padding: 24px;
+      transform: translateY(100%);
+      transition: transform 0.25s ease;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom));
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-overlay.active .modal {
+      transform: translateY(0);
+    }
+
+    .grid-6 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .grid-btn {
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--text-color);
+      cursor: pointer;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-size: 16px;
+    }
+
+    .stat-metric {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--accent-color);
+    }
+
+    .h2h-card {
+      background: var(--bg-color);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 8px;
+      border: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-container">
+    <header>
+      <div style="width: 30px;"></div>
+      <span class="header-title" id="header-title">Neues Spiel</span>
+      <div id="header-right-action" style="width: 30px; text-align: right;"></div>
+    </header>
+
+    <main id="main-content"></main>
+
+    <nav id="navbar">
+      <button class="tab-btn active" onclick="switchTab('newGame')">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Spielen
+      </button>
+      <button class="tab-btn" onclick="switchTab('leaderboard')">
+        <svg viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V18H8v2h8v-2h-3v-2.1c2.12-.39 3.79-2.03 3.98-4.22C19.38 11.31 21 9.35 21 7V6c0-1.1-.9-1-2-1zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
+        Ranking
+      </button>
+      <button class="tab-btn" onclick="switchTab('players')">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        Spieler
+      </button>
+      <button class="tab-btn" onclick="switchTab('history')">
+        <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8z"/></svg>
+        Verlauf
+      </button>
+      <button class="tab-btn" onclick="switchTab('settings')">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        Settings
+      </button>
+    </nav>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+    <div class="modal" id="modal-body"></div>
+  </div>
+
+  <script>
+    let state = {
+      players: [],
+      sessions: [],
+      activeGame: null,
+      currentTab: 'newGame',
+      leaderboardMode: 'ranking',
+      leaderboardSort: 'avg',
+      selectedPlayersForSetup: [],
+      apiUrl: localStorage.getItem('kniffel_api_url') || '',
+      apiPassword: localStorage.getItem('kniffel_api_password') || ''
+    };
+
+    function loadState() {
+      try {
+        const data = localStorage.getItem('kniffel_pwa_data');
+        if (data) {
+          const parsed = JSON.parse(data);
+          state.players = parsed.players || [];
+          state.sessions = parsed.sessions || [];
+        }
+      } catch (e) {
+        console.error("Fehler beim Laden:", e);
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem('kniffel_pwa_data', JSON.stringify({
+          players: state.players,
+          sessions: state.sessions
+        }));
+      } catch (e) {
+        console.error("Fehler beim Speichern:", e);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      loadState();
+      if (state.apiUrl) {
+        await syncWithGoogleSheets(true);
+      }
+      switchTab('newGame');
+    });
+
+    function switchTab(tab) {
+      state.currentTab = tab;
+      const tabs = ['newGame', 'leaderboard', 'players', 'history', 'settings'];
+      document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', tabs[idx] === tab);
+      });
+
+      const header = document.getElementById('header-title');
+      const actionArea = document.getElementById('header-right-action');
+      const nav = document.getElementById('navbar');
+
+      if (actionArea) actionArea.innerHTML = '';
+
+      if (state.activeGame) {
+        if (nav) nav.classList.add('hidden');
+        if (header) header.textContent = "Laufende Partie";
+      } else {
+        if (nav) nav.classList.remove('hidden');
+        const titles = {
+          newGame: 'Neues Spiel',
+          leaderboard: 'Leaderboard & Analytics',
+          players: 'Spielerverwaltung',
+          history: 'Verlauf',
+          settings: 'Einstellungen'
+        };
+        if (header) header.textContent = titles[tab] || 'Kniffel';
+
+        if (tab === 'players' && actionArea) {
+          actionArea.innerHTML = '<button class="add-btn" onclick="openAddPlayerModal()">＋</button>';
+        }
+      }
+
+      render();
+    }
+
+    function render() {
+      const content = document.getElementById('main-content');
+      if (!content) return;
+
+      if (state.activeGame) {
+        renderScorecardMatrix(content);
+        return;
+      }
+
+      switch (state.currentTab) {
+        case 'newGame': renderNewGameSetup(content); break;
+        case 'leaderboard': renderLeaderboardAndStats(content); break;
+        case 'players': renderPlayerList(content); break;
+        case 'history': renderHistory(content); break;
+        case 'settings': renderSettings(content); break;
+        default: renderNewGameSetup(content); break;
+      }
+    }
+
+    function renderNewGameSetup(container) {
+      container.innerHTML = `
+        <div class="card">
+          <div class="section-title">2 bis 6 Spieler auswählen</div>
+          ${state.players.length < 2 ? '<p style="color:var(--text-secondary);">Bitte zuerst mind. 2 Spieler im Reiter "Spieler" anlegen.</p>' : ''}
+          ${state.players.map(p => `
+            <div class="checkbox-item">
+              <span>${escapeHtml(p.name)}</span>
+              <input type="checkbox" value="${p.id}" ${state.selectedPlayersForSetup.includes(p.id) ? 'checked' : ''} onchange="togglePlayerSelection('${p.id}')" style="width:22px; height:22px;">
+            </div>
+          `).join('')}
+          <button class="btn" onclick="startMultiplayerGame()" ${state.selectedPlayersForSetup.length < 2 || state.selectedPlayersForSetup.length > 6 ? 'disabled style="opacity:0.5;"' : ''}>
+            Partie Starten (${state.selectedPlayersForSetup.length}/6)
+          </button>
+        </div>
+      `;
+    }
+
+    function togglePlayerSelection(id) {
+      const idx = state.selectedPlayersForSetup.indexOf(id);
+      if (idx > -1) state.selectedPlayersForSetup.splice(idx, 1);
+      else {
+        if (state.selectedPlayersForSetup.length >= 6) return alert("Maximal 6 Spieler erlaubt!");
+        state.selectedPlayersForSetup.push(id);
+      }
+      render();
+    }
+
+    function startMultiplayerGame() {
+      if (state.selectedPlayersForSetup.length < 2 || state.selectedPlayersForSetup.length > 6) {
+        return alert("Bitte 2 bis 6 Spieler auswählen!");
+      }
+
+      state.activeGame = {
+        playerIds: [...state.selectedPlayersForSetup],
+        scores: {}
+      };
+
+      state.selectedPlayersForSetup.forEach(pId => {
+        state.activeGame.scores[pId] = {
+          ones: null, twos: null, threes: null, fours: null, fives: null, sixes: null,
+          threeOfAKind: null, fourOfAKind: null, fullHouse: null, smallStraight: null,
+          largeStraight: null, kniffel: null, kniffelVal: null, chance: null
+        };
+      });
+
+      switchTab('newGame');
+    }
+
+    function renderScorecardMatrix(container) {
+      const pIds = state.activeGame.playerIds;
+      const categories = [
+        { key: 'ones', label: 'Einser' }, { key: 'twos', label: 'Zweier' },
+        { key: 'threes', label: 'Dreier' }, { key: 'fours', label: 'Vierer' },
+        { key: 'fives', label: 'Fünfer' }, { key: 'sixes', label: 'Sechser' },
+        { key: 'upperBonus', label: 'Bonus (63+)', isCalc: true },
+        { key: 'threeOfAKind', label: '3er-Pasch' }, { key: 'fourOfAKind', label: '4er-Pasch' },
+        { key: 'fullHouse', label: 'Full House' }, { key: 'smallStraight', label: 'Kl. Straße' },
+        { key: 'largeStraight', label: 'Gr. Straße' }, { key: 'kniffel', label: 'Kniffel' },
+        { key: 'chance', label: 'Chance' },
+        { key: 'total', label: 'GESAMT', isCalc: true }
+      ];
+
+      container.innerHTML = `
+        <div class="scorecard-matrix-wrapper">
+          <div class="sticky-labels-col">
+            <div class="sticky-cell header-cell">Kategorie</div>
+            ${categories.map(c => `<div class="sticky-cell" ${c.isCalc ? 'style="font-weight:bold; color:var(--accent-color);"' : ''}>${c.label}</div>`).join('')}
+          </div>
+
+          <div class="scrollable-players-col">
+            ${pIds.map(pId => {
+              const p = state.players.find(pl => pl.id === pId);
+              const pScores = state.activeGame.scores[pId];
+              const upperSum = ['ones','twos','threes','fours','fives','sixes'].reduce((s,k)=>s+(pScores[k]||0),0);
+              const bonus = upperSum >= 63 ? 35 : 0;
+              const lowerSum = ['threeOfAKind','fourOfAKind','fullHouse','smallStraight','largeStraight','kniffel','chance'].reduce((s,k)=>s+(pScores[k]||0),0);
+              const total = upperSum + bonus + lowerSum;
+
+              return `
+                <div class="player-col">
+                  <div class="player-cell header-cell">
+                    <span>${p ? escapeHtml(p.name) : ''}</span>
+                    <span style="font-size:11px; color:var(--text-color);">${total} Pkt</span>
+                  </div>
+                  ${categories.map(c => {
+                    if (c.key === 'upperBonus') return `<div class="player-cell" style="font-weight:bold; color:var(--success-color);">${bonus > 0 ? '+35' : '0'}</div>`;
+                    if (c.key === 'total') return `<div class="player-cell" style="font-weight:bold; color:var(--accent-color);">${total}</div>`;
+                    
+                    const val = pScores[c.key];
+                    return `
+                      <div class="player-cell" onclick="handleMatrixCellTap('${pId}', '${c.key}')">
+                        <span class="badge ${val === 0 ? 'striked' : ''}">${val ?? '–'}</span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <button class="btn" onclick="finishMultiplayerGame()">Partie Beenden & Speichern</button>
+      `;
+    }
+
+    function handleMatrixCellTap(pId, key) {
+      if (['ones','twos','threes','fours','fives','sixes'].includes(key)) {
+        const mults = { ones: 1, twos: 2, threes: 3, fours: 4, fives: 5, sixes: 6 };
+        const m = mults[key];
+        showModal(`
+          <h3>Punkte wählen</h3>
+          <div class="grid-6">
+            ${[1,2,3,4,5].map(c => `<button class="grid-btn" onclick="setMatrixVal('${pId}', '${key}',${c * m})">${c}x (${c * m})</button>`).join('')}
+          </div>
+          <button class="btn btn-secondary" onclick="setMatrixVal('${pId}', '${key}', 0)">Streichen (0)</button>
+        `);
+      } else if (['threeOfAKind','fourOfAKind','chance'].includes(key)) {
+        showModal(`
+          <h3>Punkte eingeben</h3>
+          <input type="number" id="matrix-numpad" placeholder="0" autofocus style="margin-top: 12px;">
+          <button class="btn" onclick="setMatrixVal('${pId}', '${key}', parseInt(document.getElementById('matrix-numpad').value)||0)">Speichern</button>
+          <button class="btn btn-secondary" onclick="setMatrixVal('${pId}', '${key}', 0)">Streichen (0)</button>
+        `);
+      } else if (['fullHouse','smallStraight','largeStraight'].includes(key)) {
+        const targets = { fullHouse: 25, smallStraight: 30, largeStraight: 40 };
+        const cur = state.activeGame.scores[pId][key];
+        if (cur === null) state.activeGame.scores[pId][key] = targets[key];
+        else if (cur === targets[key]) state.activeGame.scores[pId][key] = 0;
+        else state.activeGame.scores[pId][key] = null;
+        render();
+      } else if (key === 'kniffel') {
+        const cur = state.activeGame.scores[pId].kniffel;
+        if (cur === null) {
+          showModal(`
+            <h3>Welche Augenzahl?</h3>
+            <div class="grid-6">
+              ${[1,2,3,4,5,6].map(n => `<button class="grid-btn" onclick="setMatrixKniffel('${pId}', ${n})">${n}er</button>`).join('')}
+            </div>
+          `);
+        } else if (cur === 50) {
+          state.activeGame.scores[pId].kniffel = 0;
+          state.activeGame.scores[pId].kniffelVal = null;
+          render();
+        } else {
+          state.activeGame.scores[pId].kniffel = null;
+          state.activeGame.scores[pId].kniffelVal = null;
+          render();
+        }
+      }
+    }
+
+    function setMatrixVal(pId, key, val) {
+      state.activeGame.scores[pId][key] = val;
+      closeModal();
+      render();
+    }
+
+    function setMatrixKniffel(pId, num) {
+      state.activeGame.scores[pId].kniffel = 50;
+      state.activeGame.scores[pId].kniffelVal = num;
+      closeModal();
+      render();
+    }
+
+    async function finishMultiplayerGame() {
+      const dateStr = new Date().toLocaleDateString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+      for (let pId of state.activeGame.playerIds) {
+        const pScores = state.activeGame.scores[pId];
+        const upperSum = ['ones','twos','threes','fours','fives','sixes'].reduce((s,k)=>s+(pScores[k]||0),0);
+        const bonus = upperSum >= 63 ? 35 : 0;
+        const lowerSum = ['threeOfAKind','fourOfAKind','fullHouse','smallStraight','largeStraight','kniffel','chance'].reduce((s,k)=>s+(pScores[k]||0),0);
+        const total = upperSum + bonus + lowerSum;
+
+        const session = {
+          date: dateStr,
+          playerId: pId,
+          total: total,
+          kniffelVal: pScores.kniffelVal
+        };
+
+        state.sessions.push(session);
+        if (state.apiUrl) await sendToGoogleSheets({ action: "saveGame", session: session });
+      }
+
+      state.activeGame = null;
+      saveState();
+      switchTab('history');
+    }
+
+    function renderLeaderboardAndStats(container) {
+      container.innerHTML = `
+        <div class="card">
+          <div class="section-title">Ansicht Wählen</div>
+          <select onchange="state.leaderboardMode = this.value; render();">
+            <option value="ranking" ${state.leaderboardMode==='ranking'?'selected':''}>🏆 Rangliste / Leaderboard</option>
+            <option value="stats" ${state.leaderboardMode==='stats'?'selected':''}>📊 Liga-Statistik & Charts</option>
+          </select>
+        </div>
+      `;
+
+      if (state.leaderboardMode === 'ranking') {
+        renderRankingSection(container);
+      } else {
+        renderAnalyticsSection(container);
+      }
+    }
+
+    function renderRankingSection(container) {
+      let sorted = [...state.players].map(p => {
+        let pSessions = state.sessions.filter(s => s.playerId === p.id);
+        let avg = pSessions.length ? (pSessions.reduce((a,b) => a + Number(b.total), 0) / pSessions.length) : 0;
+        let high = pSessions.length ? Math.max(...pSessions.map(s => Number(s.total))) : 0;
+        let kniffelGames = pSessions.filter(s => s.kniffelVal != null && Number(s.kniffelVal) > 0).length;
+        let kniffelRate = pSessions.length ? ((kniffelGames / pSessions.length) * 100) : 0;
+
+        return { ...p, avg: avg.toFixed(1), high: high, games: pSessions.length, kniffelRate: kniffelRate.toFixed(0) };
+      });
+
+      if (state.leaderboardSort === 'avg') sorted.sort((a,b) => b.avg - a.avg);
+      if (state.leaderboardSort === 'high') sorted.sort((a,b) => b.high - a.high);
+      if (state.leaderboardSort === 'games') sorted.sort((a,b) => b.games - a.games);
+      if (state.leaderboardSort === 'kniffelRate') sorted.sort((a,b) => b.kniffelRate - a.kniffelRate);
+
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `
+        <div class="section-title">Sortierung</div>
+        <select onchange="state.leaderboardSort = this.value; render();">
+          <option value="avg" ${state.leaderboardSort==='avg'?'selected':''}>Durchschnittspunkte (Ø)</option>
+          <option value="high" ${state.leaderboardSort==='high'?'selected':''}>Highscore</option>
+          <option value="kniffelRate" ${state.leaderboardSort==='kniffelRate'?'selected':''}>Kniffelquote (%)</option>
+          <option value="games" ${state.leaderboardSort==='games'?'selected':''}>Gesamtspiele</option>
+        </select>
+        <div style="margin-top: 16px;"></div>
+        ${sorted.map((p, i) => `
+          <div class="row" onclick="openPlayerDetail('${p.id}')">
+            <div>
+              <strong>#${i+1}${escapeHtml(p.name)}</strong><br>
+              <small style="color:var(--text-secondary);">${p.games} Spiele · ${p.kniffelRate}% Kniffel-Rate</small>
+            </div>
+            <span class="badge active">
+              ${state.leaderboardSort === 'high' ? p.high + ' Pkt' : (state.leaderboardSort === 'kniffelRate' ? p.kniffelRate + '%' : p.avg + ' Ø')}
+            </span>
+          </div>
+        `).join('')}
+      `;
+      container.appendChild(div);
+    }
+
+    function renderAnalyticsSection(container) {
+      const totalGames = state.sessions.length;
+      const allTotals = state.sessions.map(s => Number(s.total));
+      const leagueAvg = totalGames ? (allTotals.reduce((a,b)=>a+b,0)/totalGames).toFixed(1) : 0;
+      
+      let maxSession = null, minSession = null;
+      if (totalGames > 0) {
+        const maxVal = Math.max(...allTotals);
+        const minVal = Math.min(...allTotals);
+        maxSession = state.sessions.find(s => Number(s.total) === maxVal);
+        minSession = state.sessions.find(s => Number(s.total) === minVal);
+      }
+
+      const maxPlayer = maxSession ? state.players.find(p => p.id === maxSession.playerId) : null;
+      const minPlayer = minSession ? state.players.find(p => p.id === minSession.playerId) : null;
+
+      const kniffelCounts = [1,2,3,4,5,6].map(val => state.sessions.filter(s => Number(s.kniffelVal) === val).length);
+      const totalKniffels = kniffelCounts.reduce((a,b)=>a+b,0);
+
+      const statsDiv = document.createElement('div');
+      statsDiv.innerHTML = `
+        <div class="card">
+          <div class="section-title">Liga Kennzahlen</div>
+          <div class="row"><span>Gesamte Spiele</span><span class="stat-metric">${totalGames}</span></div>
+          <div class="row"><span>Liga-Durchschnitt</span><span class="stat-metric">${leagueAvg} Pkt</span></div>
+          ${maxSession ? `
+            <div class="row" onclick="openPlayerDetail('${maxSession.playerId}')">
+              <span>Alltime Highscore</span>
+              <span class="badge active">${maxSession.total} Pkt (${maxPlayer ? escapeHtml(maxPlayer.name) : ''})</span>
+            </div>` : ''}
+          ${minSession ? `
+            <div class="row" onclick="openPlayerDetail('${minSession.playerId}')">
+              <span>Alltime Minimum</span>
+              <span class="badge striked">${minSession.total} Pkt (${minPlayer ? escapeHtml(minPlayer.name) : ''})</span>
+            </div>` : ''}
+        </div>
+
+        <div class="card">
+          <div class="section-title">Kniffel-Verteilung (Augenzahlen)</div>
+          ${renderDonutChartSVG(kniffelCounts, totalKniffels)}
+        </div>
+
+        <div class="card">
+          <div class="section-title">Punkteverteilung (Histogramm)</div>
+          ${renderHistogramSVG(allTotals)}
+        </div>
+      `;
+      container.appendChild(statsDiv);
+    }
+
+    function renderDonutChartSVG(counts, total) {
+      if (total === 0) return '<p style="color:var(--text-secondary);">Noch keine Kniffel erzielt.</p>';
+      const colors = ['#ff9500', '#ff3b30', '#34c759', '#007aff', '#af52de', '#5856d6'];
+      let cumulativeAngle = 0;
+
+      const slices = counts.map((count, i) => {
+        const perc = count / total;
+        const angle = perc * 360;
+        const x1 = 50 + 40 * Math.cos(Math.PI * cumulativeAngle / 180);
+        const y1 = 50 + 40 * Math.sin(Math.PI * cumulativeAngle / 180);
+        cumulativeAngle += angle;
+        const x2 = 50 + 40 * Math.cos(Math.PI * cumulativeAngle / 180);
+        const y2 = 50 + 40 * Math.sin(Math.PI * cumulativeAngle / 180);
+        const largeArc = angle > 180 ? 1 : 0;
+
+        return count > 0 ? `<path d="M50 50 L${x1} ${y1} A40 40 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${colors[i]}" />` : '';
+      }).join('');
+
+      return `
+        <div style="display:flex; align-items:center; justify-content:space-around;">
+          <svg viewBox="0 0 100 100" style="width:120px; height:120px; border-radius:50%;">
+            ${slices}
+            <circle cx="50" cy="50" r="22" fill="var(--card-bg)" />
+          </svg>
+          <div>
+            ${counts.map((c, i) => `<div style="font-size:12px; color:${colors[i]}; font-weight:bold;">${i+1}er Kniffel:${c}x</div>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHistogramSVG(scores) {
+      if (scores.length === 0) return '<p style="color:var(--text-secondary);">Keine Daten vorhanden.</p>';
+      const brackets = [ {l:'<150', c:0}, {l:'150-199', c:0}, {l:'200-249', c:0}, {l:'250-299', c:0}, {l:'300+', c:0} ];
+
+      scores.forEach(s => {
+        if (s < 150) brackets[0].c++;
+        else if (s < 200) brackets[1].c++;
+        else if (s < 250) brackets[2].c++;
+        else if (s < 300) brackets[3].c++;
+        else brackets[4].c++;
+      });
+
+      const maxCount = Math.max(...brackets.map(b => b.c), 1);
+
+      return `
+        <div style="display:flex; height:120px; align-items:flex-end; gap:8px; padding-top:20px;">
+          ${brackets.map(b => {
+            const h = (b.c / maxCount) * 80;
+            return `
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+                <span style="font-size:10px; font-weight:bold;">${b.c}</span>
+                <div style="width:100%; height:${h}px; background:var(--accent-color); border-radius:4px 4px 0 0;"></div>
+                <span style="font-size:9px; color:var(--text-secondary); margin-top:4px;">${b.l}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function renderPlayerList(container) {
+      container.innerHTML = `
+        <div class="card">
+          <div class="section-title">Alle Spieler (${state.players.length})</div>
+          ${state.players.length === 0 ? '<p style="color:var(--text-secondary);">Noch keine Spieler angelegt. Tippe oben rechts auf <strong>＋</strong>.</p>' : ''}
+          ${state.players.map(p => `
+            <div class="row" onclick="openPlayerDetail('${p.id}')">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:36px; height:36px; border-radius:50%; background:var(--accent-color); color:white; font-weight:bold; display:flex; align-items:center; justify-content:center;">
+                  ${escapeHtml(p.name.charAt(0).toUpperCase())}
+                </div>
+                <span><strong>${escapeHtml(p.name)}</strong></span>
+              </div>
+              <button style="background:none; border:none; color:var(--danger-color); font-weight:bold;" onclick="event.stopPropagation(); deletePlayer('${p.id}')">Löschen</button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function openAddPlayerModal() {
+      showModal(`
+        <h3>Neuen Spieler anlegen</h3>
+        <input type="text" id="new-player-name" placeholder="Spielername eingeben..." autofocus style="margin-top: 12px;">
+        <button class="btn" onclick="addPlayerFromModal()">Speichern</button>
+      `);
+    }
+
+    async function addPlayerFromModal() {
+      const input = document.getElementById('new-player-name');
+      const name = input ? input.value.trim() : '';
+      if (!name) return;
+
+      const player = { id: Date.now().toString(), name: name };
+      state.players.push(player);
+      saveState();
+
+      if (state.apiUrl) await sendToGoogleSheets({ action: "addPlayer", player: player });
+      closeModal();
+      render();
+    }
+
+    function deletePlayer(id) {
+      if (!confirm("Spieler und zugehörige Daten wirklich löschen?")) return;
+      state.players = state.players.filter(p => p.id !== id);
+      saveState();
+      render();
+    }
+
+    function openPlayerDetail(pId) {
+      const p = state.players.find(pl => pl.id === pId);
+      if (!p) return;
+
+      const pSessions = state.sessions.filter(s => s.playerId === pId);
+      const avg = pSessions.length ? (pSessions.reduce((a,b)=>a+Number(b.total),0)/pSessions.length).toFixed(1) : 0;
+      const high = pSessions.length ? Math.max(...pSessions.map(s => Number(s.total))) : 0;
+
+      const opponents = state.players.filter(pl => pl.id !== pId);
+      let h2hHtml = '';
+
+      opponents.forEach(opp => {
+        let duels = 0, wins = 0, losses = 0, draws = 0;
+        let pTotalPts = 0, oppTotalPts = 0;
+
+        const gamesByDate = {};
+        state.sessions.forEach(s => {
+          if (!gamesByDate[s.date]) gamesByDate[s.date] = [];
+          gamesByDate[s.date].push(s);
+        });
+
+        Object.values(gamesByDate).forEach(group => {
+          const pGame = group.find(s => s.playerId === pId);
+          const oppGame = group.find(s => s.playerId === opp.id);
+
+          if (pGame && oppGame) {
+            duels++;
+            const pScore = Number(pGame.total);
+            const oppScore = Number(oppGame.total);
+            pTotalPts += pScore;
+            oppTotalPts += oppScore;
+
+            if (pScore > oppScore) wins++;
+            else if (oppScore > pScore) losses++;
+            else draws++;
+          }
+        });
+
+        if (duels > 0) {
+          const pAvgH2H = (pTotalPts / duels).toFixed(0);
+          const oppAvgH2H = (oppTotalPts / duels).toFixed(0);
+
+          h2hHtml += `
+            <div class="h2h-card">
+              <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:14px; margin-bottom:4px;">
+                <span>vs. ${escapeHtml(opp.name)}</span>
+                <span style="color:var(--accent-color);">${duels} ${duels === 1 ? 'Partie' : 'Partien'}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--text-secondary);">
+                <span>Bilanz: <strong style="color:${wins >= losses ? 'var(--success-color)' : 'var(--danger-color)'};">${wins}W - ${losses}L - ${draws}D</strong></span>
+                <span>Ø ${pAvgH2H} : ${oppAvgH2H} Pkt</span>
+              </div>
+            </div>
+          `;
+        }
+      });
+
+      if (!h2hHtml) {
+        h2hHtml = '<p style="color:var(--text-secondary); font-size:13px; margin-top:8px;">Noch keine gemeinsamen Duelle absolviert.</p>';
+      }
+
+      showModal(`
+        <h3>${escapeHtml(p.name)} (Spielerprofil)</h3>
+        <div class="row"><span>Gespielte Partien</span><strong>${pSessions.length}</strong></div>
+        <div class="row"><span>Ø Punkteschnitt</span><strong>${avg} Pkt</strong></div>
+        <div class="row"><span>Highscore</span><strong>${high} Pkt</strong></div>
+        
+        <div style="margin-top: 20px;">
+          <div class="section-title">Head-to-Head Duelle (H2H)</div>
+          ${h2hHtml}
+        </div>
+
+        <button class="btn" onclick="closeModal()" style="margin-top: 20px;">Schließen</button>
+      `);
+    }
+
+    function renderHistory(container) {
+      container.innerHTML = `
+        <div class="card">
+          <div class="section-title">Gespielte Partien</div>
+          ${state.sessions.slice().reverse().map(s => {
+            const player = state.players.find(p => p.id === s.playerId);
+            return `
+              <div class="row">
+                <div>
+                  <strong>${player ? escapeHtml(player.name) : 'Unbekannt'}</strong><br>
+                  <small style="color:var(--text-secondary);">${escapeHtml(s.date)}</small>
+                </div>
+                <span class="badge active">${s.total} Pkt</span>
+              </div>`;
+          }).join('') || '<p style="color:var(--text-secondary);">Noch keine Spiele aufgezeichnet.</p>'}
+        </div>
+      `;
+    }
+
+    function renderSettings(container) {
+      const isConnected = Boolean(state.apiUrl && state.apiPassword);
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="section-title">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${isConnected ? 'var(--success-color)' : 'var(--danger-color)'}; margin-right:6px;"></span>
+            Google Sheets Cloud-Verbindung
+          </div>
+          <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
+            Trage hier die Web-App URL deines Google Apps Scripts und das Passwort ein, um die Spieldaten live für alle Mitspieler zu synchronisieren.
+          </p>
+          <input type="text" id="api-url" placeholder="Web-App URL (https://script.google.com/.../exec)" value="${escapeHtml(state.apiUrl)}">
+          <input type="password" id="api-password" placeholder="Passwort" value="${escapeHtml(state.apiPassword)}" style="margin-top: 8px;">
+          <button class="btn" onclick="saveCloudCredentials()">Verbinden & Synchronisieren</button>
+        </div>
+      `;
+    }
+
+    function saveCloudCredentials() {
+      const urlInput = document.getElementById('api-url');
+      const pwdInput = document.getElementById('api-password');
+
+      const url = urlInput ? urlInput.value.trim() : '';
+      const pwd = pwdInput ? pwdInput.value.trim() : '';
+
+      state.apiUrl = url;
+      state.apiPassword = pwd;
+
+      localStorage.setItem('kniffel_api_url', url);
+      localStorage.setItem('kniffel_api_password', pwd);
+
+      syncWithGoogleSheets(false);
+    }
+
+    async function sendToGoogleSheets(payload) {
+      if (!state.apiUrl || !state.apiPassword) return;
+      payload.password = state.apiPassword;
+
+      try {
+        const response = await fetch(state.apiUrl, { method: 'POST', body: JSON.stringify(payload) });
+        const result = await response.json();
+        if (result.status === "error") alert("Cloud-Fehler: " + result.message);
+        return result;
+      } catch (err) {
+        console.error("Netzwerkfehler:", err);
+      }
+    }
+
+    async function syncWithGoogleSheets(silent = false) {
+      if (!state.apiUrl) return;
+      const result = await sendToGoogleSheets({ action: "syncAll" });
+      if (result && result.status === "success") {
+        state.players = result.players || [];
+        state.sessions = result.sessions || [];
+        saveState();
+        render();
+        if (!silent) alert("Erfolgreich mit Google Sheets synchronisiert!");
+      }
+    }
+
+    function showModal(html) {
+      const body = document.getElementById('modal-body');
+      const overlay = document.getElementById('modal-overlay');
+      if (body && overlay) {
+        body.innerHTML = html;
+        overlay.classList.add('active');
+      }
+    }
+
+    function closeModal(e) {
+      if (!e || e.target.id === 'modal-overlay') {
+        const overlay = document.getElementById('modal-overlay');
+        if (overlay) overlay.classList
