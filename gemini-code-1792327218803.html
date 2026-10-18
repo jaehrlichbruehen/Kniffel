@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Kniffel Scorecard & Stats</title>
+
+  <!-- iOS Home-Bildschirm Vollbild -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kniffel">
+  <meta name="theme-color" content="#f2f2f7">
+
+  <!-- APP ICON FÜR DEN HOMESCREEN -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23ffb340;stop-opacity:1'/><stop offset='100%' style='stop-color:%23ff9500;stop-opacity:1'/></linearGradient></defs><rect width='512' height='512' rx='115' fill='url(%23grad)'/><rect x='112' y='112' width='288' height='288' rx='48' fill='%23ffffff' opacity='0.2'/><circle cx='180' cy='180' r='28' fill='%23ffffff'/><circle cx='332' cy='180' r='28' fill='%23ffffff'/><circle cx='256' cy='256' r='28' fill='%23ffffff'/><circle cx='180' cy='332' r='28' fill='%23ffffff'/><circle cx='332' cy='332' r='28' fill='%23ffffff'/></svg>">
+
+  <style>
+    :root {
+      --bg-color: #f2f2f7;
+      --card-bg: #ffffff;
+      --accent-color: #ff9500;
+      --text-color: #000000;
+      --text-secondary: #8e8e93;
+      --border-color: #e5e5ea;
+      --badge-bg: #e5e5ea;
+      --danger-color: #ff3b30;
+      --success-color: #34c759;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #000000;
+        --card-bg: #1c1c1e;
+        --text-color: #ffffff;
+        --text-secondary: #8e8e93;
+        --border-color: #2c2c2e;
+        --badge-bg: #2c2c2e;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #app-container {
+      display:
